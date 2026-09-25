@@ -1,0 +1,427 @@
+{
+  "c7_oof_audit": {
+    "candidate_files": 19,
+    "files_with_fold_column": 17,
+    "files_with_study_column": 18,
+    "files_without_study_column": 1,
+    "fold_isolation_result": "PASS",
+    "multi_fold_study_events": 0,
+    "non_train_study_events": 0,
+    "records": [
+      {
+        "artifact": "rad-dino-linear-probe-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-03c-rad-dino-linear-probe-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 560,
+        "sha256": "aff164510d673c0405e980b68c673b77d5f781957614518f94c515249b41291a",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 80,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "current-vs-rad-dino-oof-v1.csv",
+        "audit_status": "NO_STUDY_COLUMN_DIRECT_AUDIT_NOT_APPLICABLE",
+        "experiment": "challenger-c7-04a-oof-fusion-audit-v1",
+        "fold_column_available": false,
+        "non_train_studies": null,
+        "rows": 6,
+        "sha256": "50f8472b0e59c043bde366032e821d703fb8760f8ac69422edea2546003aa343",
+        "studies_in_multiple_folds": null,
+        "study_column_available": false,
+        "unique_folds": null,
+        "unique_studies": null,
+        "validation_overlap": null
+      },
+      {
+        "artifact": "biomedclip-linear-probe-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-05b-biomedclip-linear-probe-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 560,
+        "sha256": "22c8789fc32c9b510e133a2555992dea0563e933a2c13323222898ff6f92e2e4",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 80,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "rad-dino-hip-finetune-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-06a-rad-dino-hip-finetune-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 120,
+        "sha256": "906ab818a3d515d15c20516464693d0ef822fed19e0bae5a3e463a4ef3e851d1",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "laterality-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-07a6-visual-laterality-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 121,
+        "sha256": "18e6c82c9a1ab50a83b2d461d92c16992c4ba962609e9e19ab3e961abf48c937",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "c2-center-medial-c7-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-07b-c2-frozen-fold-replay-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 120,
+        "sha256": "2f0c07ef702e19014384c6832d323c6148dfed1de68a8d2be5e9bedd55303ae5",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "physical-multiview-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-08b-physical-multiview-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 120,
+        "sha256": "d2b59a5818626e301bf36d31c497cf5f5592821e33cc376ca5dc7df30eecdb3e",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "hip-roi-physical-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-09b-hip-roi-physical-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 120,
+        "sha256": "0e972fad0e1d53c67e438c0f8b1aff523f15d4a8ea02166aa693102fed3e3468",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "roi-spacing-ablation-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-09c-roi-spacing-ablation-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 120,
+        "sha256": "51f95ab88d50526f934b0695beec1327ec21ed8bff4290cd4bf416a2dd337be5",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "spine-quality-fixed-fusion-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-10a-spine-quality-fixed-fusion-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 80,
+        "sha256": "67778f7ae59881972b414b926b7b916685c35ebbd74fac25c16f0a526956b273",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 80,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "hip-quality-specialist-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-11a-hip-quality-specialists-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 120,
+        "sha256": "6d27836753d4987217fac3d73ec5eb26009841b48b53a0e2898a9bf760e0181f",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "roi-rescue-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-12a-roi-rescue-fusion-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 120,
+        "sha256": "7c4dba2bab6b892357c25ee9f06d0a7ac221f5000f98c9e44e40492a1bf2fdfc",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "hip-quality-roi-propagation-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-12b-hip-quality-roi-propagation-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 120,
+        "sha256": "5487a163d6ca8ea28935ea20bd7d27a4230e0af59aa5577b7aa1d36dbd345c80",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "spine-artifact-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-13a-spine-artifact-bootstrap-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 80,
+        "sha256": "e4fe9b1ebe4b1f0ae94d587083857ad43766c5cd78c8800df5dce09d432cc92f",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 80,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "spine-positioning-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-13b-spine-positioning-bootstrap-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 80,
+        "sha256": "cf1870212dfe25c7bc34abd6475ea64f6be3c937513221859cb573fd6c950bde",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 80,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "spine-axis-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-13c-spine-axis-bootstrap-v1",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 80,
+        "sha256": "18d27b091311f65c552f8380054e7e4766b590e6659c15f8da1dc5c993f24f3e",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 80,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "train-oof-external-preview-independent-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-14c-output-consistency-v1",
+        "fold_column_available": false,
+        "non_train_studies": 0,
+        "rows": 200,
+        "sha256": "e6544d0e052beddc7e405b0449684073f71cf1bc9844026c99c5df62009e5795",
+        "studies_in_multiple_folds": null,
+        "study_column_available": true,
+        "unique_folds": null,
+        "unique_studies": 80,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "anatomy-router-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-15b2-all-train-deployable-refit-v2",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 201,
+        "sha256": "55d20e22fba1bb17bdf2d8cb0f9acdc3269f2af55bbdc2633a6fa1fe8309f21e",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 80,
+        "validation_overlap": 0
+      },
+      {
+        "artifact": "laterality-router-oof-v1.csv",
+        "audit_status": "AUDITED",
+        "experiment": "challenger-c7-15b2-all-train-deployable-refit-v2",
+        "fold_column_available": true,
+        "non_train_studies": 0,
+        "rows": 121,
+        "sha256": "918c14efed9e69746ea6274c9bea780ee3cc64c27f614a0eba628830110e2805",
+        "studies_in_multiple_folds": 0,
+        "study_column_available": true,
+        "unique_folds": 4,
+        "unique_studies": 62,
+        "validation_overlap": 0
+      }
+    ],
+    "train_validation_isolation_result": "PASS",
+    "union_unique_studies": 80,
+    "union_validation_overlap": 0,
+    "validation_overlap_events": 0
+  },
+  "champion_registry_support_matches_train": true,
+  "checkpoint": "R8.6-09",
+  "dataset_split": {
+    "all_validation_studies_marked_validation": true,
+    "manifest_total_studies": 100,
+    "official_validation_rows": 49,
+    "official_validation_unique_studies": 20,
+    "train_studies": 80,
+    "validation_studies": 20
+  },
+  "guardrails": {
+    "inference_executed": false,
+    "model_selection_changed": false,
+    "patient_metadata_published": false,
+    "thresholds_changed": false,
+    "uid_values_published": false,
+    "validation_retuning_performed": false
+  },
+  "interpretation": {
+    "development_oof_contains_validation_studies": false,
+    "fold_check_meaning": "For audited C7 OOF artifacts carrying fold assignments, each study appears in exactly one held-out fold.",
+    "full_manifest_contains_both_splits": true,
+    "full_manifest_overlap_with_validation_is_expected": true,
+    "small_positive_support_requires_cautious_interpretation": true,
+    "subtype_class_imbalance_is_material": true
+  },
+  "official_validation_class_support": {
+    "hip_positioning_rotation": {
+      "n": 30,
+      "negative": 23,
+      "positive": 7,
+      "prevalence": 0.23333333333333334,
+      "unit": "official VALIDATION image rows"
+    },
+    "hip_roi": {
+      "n": 30,
+      "negative": 28,
+      "positive": 2,
+      "prevalence": 0.06666666666666667,
+      "unit": "official VALIDATION image rows"
+    },
+    "overall": {
+      "n": 49,
+      "negative": 35,
+      "positive": 14,
+      "prevalence": 0.2857142857142857,
+      "unit": "official VALIDATION image rows"
+    },
+    "spine_artifact": {
+      "n": 19,
+      "negative": 16,
+      "positive": 3,
+      "prevalence": 0.15789473684210525,
+      "unit": "official VALIDATION image rows"
+    },
+    "spine_axis": {
+      "n": 19,
+      "negative": 17,
+      "positive": 2,
+      "prevalence": 0.10526315789473684,
+      "unit": "official VALIDATION image rows"
+    },
+    "spine_positioning": {
+      "n": 19,
+      "negative": 18,
+      "positive": 1,
+      "prevalence": 0.05263157894736842,
+      "unit": "official VALIDATION image rows"
+    }
+  },
+  "scope": "class imbalance and TRAIN/VALIDATION leakage audit",
+  "source_artifacts": {
+    "champion_registry": {
+      "artifact": "champion-registry-v1.csv",
+      "experiment": "challenger-c7-14a-champion-registry-v1",
+      "sha256": "9d1f75f38ec6903db289ddb0a07cb73156dfe4030d164ec4d33313a336832010"
+    },
+    "dataset_manifest": {
+      "artifact": "study-manifest-v1.json",
+      "experiment": "challenger-c7-01-study-dataset-v1",
+      "sha256": "b30cdcb53ab0418d5db7197a4d9edfb379e7f4e5ef992649f7904c41dc96ffe5"
+    },
+    "official_validation_scored_rows": {
+      "artifact": "validation-scored-rows-v1.csv",
+      "experiment": "challenger-c7-17-one-time-validation-scoring-v1",
+      "sha256": "aa530792fc9e3b8a7d3a8c450a16f26acdcafc4fa23c1c26ee43cd9480935576"
+    },
+    "study_summary": {
+      "artifact": "study-summary-v1.csv",
+      "experiment": "challenger-c7-01-study-dataset-v1",
+      "sha256": "a226db2385b0b2715d600d6d19f90e64b440d8f95a51c9099fdd270b9d9b774a"
+    }
+  },
+  "train_class_support": {
+    "hip_positioning_rotation": {
+      "n": 120,
+      "negative": 91,
+      "positive": 29,
+      "prevalence": 0.24166666666666667,
+      "unit": "TRAIN hip-side labeled rows"
+    },
+    "hip_quality": {
+      "n": 120,
+      "negative": 87,
+      "positive": 33,
+      "prevalence": 0.275,
+      "unit": "TRAIN hip-side labeled rows"
+    },
+    "hip_roi": {
+      "n": 120,
+      "negative": 115,
+      "positive": 5,
+      "prevalence": 0.041666666666666664,
+      "unit": "TRAIN hip-side labeled rows"
+    },
+    "spine_artifact": {
+      "n": 80,
+      "negative": 66,
+      "positive": 14,
+      "prevalence": 0.175,
+      "unit": "TRAIN study-level labeled rows"
+    },
+    "spine_axis": {
+      "n": 80,
+      "negative": 72,
+      "positive": 8,
+      "prevalence": 0.1,
+      "unit": "TRAIN study-level labeled rows"
+    },
+    "spine_positioning": {
+      "n": 80,
+      "negative": 75,
+      "positive": 5,
+      "prevalence": 0.0625,
+      "unit": "TRAIN study-level labeled rows"
+    },
+    "spine_quality": {
+      "n": 80,
+      "negative": 55,
+      "positive": 25,
+      "prevalence": 0.3125,
+      "unit": "TRAIN study-level labeled rows"
+    }
+  }
+}

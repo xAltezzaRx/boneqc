@@ -1,0 +1,23 @@
+{
+  "schema_version": "0.1",
+  "status": "PROVISIONAL",
+  "clinical_use": false,
+  "description": "Technical placeholder taxonomy for building the BoneQC ML pipeline. Final definitions and acceptance criteria must be approved by clinical experts.",
+  "observation_codes": [
+    {
+      "code": "POSITIONING",
+      "status": "PROVISIONAL",
+      "description": "Existing BoneQC pipeline placeholder. Clinical definition is not fixed yet."
+    },
+    {
+      "code": "ROI_PLACEMENT",
+      "status": "PROVISIONAL",
+      "description": "Existing BoneQC pipeline placeholder. Clinical definition is not fixed yet."
+    },
+    {
+      "code": "ARTIFACTS",
+      "status": "PROVISIONAL",
+      "description": "Existing BoneQC pipeline placeholder. Clinical definition is not fixed yet."
+    }
+  ]
+}

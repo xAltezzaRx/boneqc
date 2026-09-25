@@ -1,0 +1,229 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: boneqc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - boneqc-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - boneqc
+
+  object-store:
+    image: chrislusf/seaweedfs:4.46
+    container_name: boneqc-object-store
+    restart: unless-stopped
+
+    command:
+      - mini
+      - -dir=/data
+
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+
+    volumes:
+      - "${OBJECT_STORE_DATA_PATH:-boneqc-object-store-data}:/data"
+
+    ports:
+      - "${OBJECT_STORE_BIND_HOST:-127.0.0.1}:${OBJECT_STORE_PORT:-18333}:8333"
+
+    networks:
+      - boneqc
+
+  redis:
+    image: redis:8-alpine
+    container_name: boneqc-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - boneqc-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    networks:
+      - boneqc
+
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: boneqc-worker
+    restart: unless-stopped
+    group_add:
+      - "${BONEQC_SECRETS_GID:-65534}"
+    command:
+      - python
+      - -m
+      - app.worker
+    environment:
+      BONEQC_ENVIRONMENT: ${BONEQC_ENVIRONMENT:-development}
+      BONEQC_LOG_LEVEL: ${BONEQC_LOG_LEVEL:-INFO}
+      BONEQC_JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      BONEQC_PSEUDONYM_SECRET: ${PSEUDONYM_SECRET}
+      BONEQC_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      BONEQC_REDIS_URL: ${REDIS_URL}
+      BONEQC_AI_PROVIDER: ${AI_PROVIDER:-mock}
+      BONEQC_REMOTE_AI_URL: ${REMOTE_AI_URL:-http://ai-engine:9000}
+      BONEQC_REMOTE_AI_TIMEOUT_SECONDS: ${REMOTE_AI_TIMEOUT_SECONDS:-30}
+      BONEQC_REMOTE_AI_TOKEN: ${REMOTE_AI_TOKEN:-}
+      BONEQC_C7_GATEWAY_URL: ${C7_GATEWAY_URL:-http://host.docker.internal:19081}
+      BONEQC_C7_GATEWAY_TIMEOUT_SECONDS: ${C7_GATEWAY_TIMEOUT_SECONDS:-180}
+      BONEQC_C7_GATEWAY_TOKEN_FILE: /run/secrets/boneqc-c7-gateway.token
+      BONEQC_C7_FALLBACK_ENABLED: ${C7_FALLBACK_ENABLED:-false}
+      BONEQC_C7_FALLBACK_GATEWAY_URL: ${C7_FALLBACK_GATEWAY_URL:-http://host.docker.internal:19082}
+      BONEQC_S3_ENDPOINT: ${S3_ENDPOINT}
+      BONEQC_S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      BONEQC_S3_SECRET_KEY: ${S3_SECRET_KEY}
+      BONEQC_S3_BUCKET: ${S3_BUCKET}
+    volumes:
+      - "${BONEQC_C7_GATEWAY_TOKEN_PATH:-/dev/null}:/run/secrets/boneqc-c7-gateway.token:ro"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - boneqc
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: boneqc-api
+    restart: unless-stopped
+    environment:
+      BONEQC_ENVIRONMENT: ${BONEQC_ENVIRONMENT:-development}
+      BONEQC_LOG_LEVEL: ${BONEQC_LOG_LEVEL:-INFO}
+      BONEQC_JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      BONEQC_PSEUDONYM_SECRET: ${PSEUDONYM_SECRET}
+      BONEQC_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      BONEQC_REDIS_URL: ${REDIS_URL}
+      BONEQC_AI_PROVIDER: ${AI_PROVIDER:-mock}
+      BONEQC_REMOTE_AI_URL: ${REMOTE_AI_URL:-http://ai-engine:9000}
+      BONEQC_REMOTE_AI_TIMEOUT_SECONDS: ${REMOTE_AI_TIMEOUT_SECONDS:-30}
+      BONEQC_REMOTE_AI_TOKEN: ${REMOTE_AI_TOKEN:-}
+      BONEQC_S3_ENDPOINT: ${S3_ENDPOINT}
+      BONEQC_S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      BONEQC_S3_SECRET_KEY: ${S3_SECRET_KEY}
+      BONEQC_S3_BUCKET: ${S3_BUCKET}
+    ports:
+      - "${API_BIND_HOST:-127.0.0.1}:${API_PORT:-18080}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - boneqc
+
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: boneqc-web
+    restart: unless-stopped
+    environment:
+      BONEQC_COOKIE_SECURE: "${BONEQC_COOKIE_SECURE:-false}"
+      BONEQC_API_INTERNAL_URL: http://api:8000
+    ports:
+      - "${WEB_BIND_HOST:-127.0.0.1}:${WEB_PORT:-13000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/login').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 4s
+      retries: 6
+      start_period: 10s
+    networks:
+      - boneqc
+
+
+  c7-bridge:
+    profiles:
+      - c7
+    image: python:3.12-slim
+    container_name: boneqc-c7-bridge
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      BONEQC_C7_BRIDGE_LISTEN_HOST: ${C7_BRIDGE_LISTEN_HOST:-127.0.0.1}
+      BONEQC_C7_BRIDGE_LISTEN_PORT: "${C7_BRIDGE_LISTEN_PORT:-19081}"
+      BONEQC_C7_BRIDGE_TARGET_HOST: ${C7_BRIDGE_TARGET_HOST:-127.0.0.1}
+      BONEQC_C7_BRIDGE_TARGET_PORT: "${C7_BRIDGE_TARGET_PORT:-19080}"
+    volumes:
+      - ./infrastructure/c7/bridge.py:/app/bridge.py:ro
+    command:
+      - python
+      - /app/bridge.py
+
+  ai-engine:
+    build:
+      context: ./apps/ai-engine
+    container_name: boneqc-ai-engine
+    restart: unless-stopped
+    environment:
+      BONEQC_AI_MODEL_BACKEND: mock
+      BONEQC_AI_PROVIDER_NAME: remote
+      BONEQC_AI_PROVIDER_VERSION: "0.1.0"
+      BONEQC_AI_MODEL_NAME: boneqc-remote-mock-qc
+      BONEQC_AI_MODEL_VERSION: "0.1.0"
+      BONEQC_AI_MODEL_TASK: quality_control
+      BONEQC_AI_GIT_COMMIT: ${AI_GIT_COMMIT:-}
+      BONEQC_AI_DATASET_VERSION: ${AI_DATASET_VERSION:-}
+      BONEQC_AI_WEIGHTS_HASH: ${AI_WEIGHTS_HASH:-}
+    expose:
+      - "9000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/health', timeout=2).read()"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - boneqc
+
+networks:
+  boneqc:
+    name: ${BONEQC_NETWORK_NAME:-boneqc-dev}
+
+
+volumes:
+  boneqc-object-store-data:
+  boneqc-postgres-data:
+  boneqc-redis-data:

@@ -1,0 +1,24 @@
+[Unit]
+Description=BoneQC C7 GTX1060 fallback gateway
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User=boneqc
+Group=boneqc
+
+WorkingDirectory=/opt/boneqc
+
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+EnvironmentFile=/etc/boneqc/c7-gtx1060.env
+
+ExecStart=/usr/bin/python3 /opt/boneqc/infrastructure/c7/gateway.py
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

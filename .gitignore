@@ -1,0 +1,62 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+/data/
+/storage/
+/uploads/
+/tmp/
+
+# ML
+*.pt
+*.pth
+*.ckpt
+*.onnx
+ml/artifacts/
+ml/models/
+
+# Secrets
+secrets/
+*.key
+*.pem
+
+# BoneQC ML data and model artifacts.
+# Real medical datasets and trained weights must never be committed.
+ml/datasets/*
+!ml/datasets/.gitkeep
+!ml/datasets/README.md
+
+ml/artifacts/*
+!ml/artifacts/.gitkeep
+!ml/artifacts/README.md
+
+*.dcm
+*.dicom
+*.pth
+*.pt
+*.ckpt
+*.onnx
