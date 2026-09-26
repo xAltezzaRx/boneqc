@@ -1,153 +1,215 @@
 # BoneQC C7 — Model Card
 
-## Назначение
+## 1. Назначение
 
 C7 — финальная frozen ML-архитектура BoneQC для автоматического технического контроля качества DXA-исследований в формате DICOM.
 
-Модель оценивает качество выполнения исследования.
+C7 оценивает техническое качество выполнения исследования.
 
-C7 не предназначен для диагностики остеопороза и не заменяет заключение врача.
+C7 не предназначен для диагностики остеопороза и не заменяет медицинское заключение врача.
 
-## Поддерживаемые области
+## 2. Поддерживаемые области
 
-~~~text
+```text
 SPINE
 LEFT_HIP
 RIGHT_HIP
-~~~
+```
 
-## Контролируемые нарушения
+## 3. Поддерживаемые subtype-направления
 
 ### Позвоночник
 
-Контролируются:
-
-- корректность укладки;
-- отклонение оси;
-- посторонние объекты и выраженные артефакты.
+```text
+positioning
+axis
+artifact
+```
 
 ### Проксимальный отдел бедра
 
-Контролируются:
+```text
+positioning / rotation
+ROI / FOV
+```
 
-- укладка и ротация;
-- область интереса;
-- поле обзора.
-
-## Структура C7
+## 4. C7 — это ensemble специализированных компонентов
 
 C7 не является одним универсальным classifier.
 
-Финальный pipeline объединяет несколько специализированных компонентов.
+```mermaid
+flowchart TD
+    D[DICOM] --> R[Anatomy Router]
 
-### Anatomy routing
+    R -->|SPINE| SP[Spine]
+    R -->|HIP| HP[Hip]
 
-Входное изображение сначала маршрутизируется в spine или hip pipeline.
+    SP --> P1[Positioning<br/>BiomedCLIP]
+    SP --> P2[Axis<br/>deterministic geometry]
+    SP --> P3[Artifact<br/>RAD-DINO]
 
-### Laterality routing
+    HP --> L[Laterality]
+    L --> H1[Positioning / Rotation<br/>ResNet18 + C2]
+    L --> H2[ROI / FOV<br/>geometry specialist]
+    H2 --> H3[RAD-DINO gate]
 
-Для hip определяется левая или правая сторона.
+    P1 --> A[Locked aggregation]
+    P2 --> A
+    P3 --> A
+    H1 --> A
+    H2 --> A
+    H3 --> A
 
-### Spine positioning
+    A --> O[Final QC output]
+```
 
-Для контроля укладки позвоночника используется frozen BiomedCLIP representation и зафиксированный classifier.
+## 5. Anatomy routing
+
+Первый этап определяет маршрут:
+
+```text
+SPINE
+LEFT_HIP
+RIGHT_HIP
+```
+
+Для hip отдельно определяется laterality.
+
+## 6. Spine positioning
+
+Для контроля позиционирования позвоночника используется frozen BiomedCLIP representation и зафиксированный classifier.
 
 Foundation model:
 
-~~~text
+```text
 microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224
-~~~
+```
 
-### Spine axis
+Development champion:
 
-Контроль оси использует детерминированный геометрический сигнал.
+```text
+ROC-AUC = 0.992
+PR-AUC  = 0.925
+```
 
-Для ranking на development data геометрический сигнал оказался сильнее проверенных RAD-DINO и BiomedCLIP alternatives.
+Это development model-selection metrics, а не независимая оценка всей системы.
 
-Semantic rule для итогового subtype decision является частью frozen C7 contract.
+## 7. Spine axis
 
-### Spine artifact
+Контроль оси использует детерминированный геометрический сигнал `|axis_angle_deg|`.
 
-Для контроля посторонних объектов и выраженных артефактов используется RAD-DINO / DINOv2-based representation и зафиксированный classifier.
+На development data этот сигнал превзошёл проверенные RAD-DINO и BiomedCLIP alternatives по ranking metrics.
 
-### Hip positioning / rotation
+Development:
 
-Используется фиксированная комбинация:
+```text
+ROC-AUC = 0.859375
+PR-AUC  = 0.381487
+```
 
-~~~text
+В конкурсном кейсе допустимый наклон оси — до 5°.
+
+![Frozen C7 spine axis example](figures/spine-axis-frozen-c7.png)
+
+## 8. Spine artifact
+
+Для контроля посторонних объектов и выраженных артефактов используется RAD-DINO / DINOv2-based representation и frozen classifier.
+
+Development:
+
+```text
+ROC-AUC = 0.848485
+PR-AUC  = 0.690919
+```
+
+## 9. Hip positioning / rotation
+
+Используется frozen комбинация:
+
+```text
 ResNet18 + C2 center-medial signal
-~~~
+```
 
-Комбинация была выбрана на development data до one-time validation.
+Development:
 
-### Hip ROI / FOV
+```text
+ROC-AUC = 0.826828
+PR-AUC  = 0.647193
+```
 
-Для standalone ROI decision используется geometry/FOV specialist.
+Компонент связан с оценкой positioning/rotation и не является диагностическим classifier.
 
-RAD-DINO применяется дополнительно внутри общей hip-quality aggregation.
+## 10. Hip ROI / FOV
 
-Standalone ROI decision и aggregate hip QC не являются одной и той же величиной.
+Standalone ROI decision использует geometry/FOV specialist.
 
-## Итоговая архитектура
+Development:
 
-~~~text
-SPINE
-  positioning → BiomedCLIP
-  axis        → deterministic geometry
-  artifact    → RAD-DINO
+```text
+ROC-AUC = 0.836522
+PR-AUC  = 0.545333
+```
 
-HIP
-  positioning / rotation → ResNet18 + C2
-  ROI / FOV              → geometry specialist
-  aggregate hip QC       → geometry + conservative RAD-DINO gate
-~~~
+RAD-DINO дополнительно используется внутри aggregate hip-quality rule.
 
-## Формирование результата
+Aggregate hip-quality development metrics:
 
-Основной бинарный результат:
+```text
+ROC-AUC = 0.857541
+PR-AUC  = 0.729456
+```
 
-~~~text
+![Frozen C7 hip ROI example](figures/hip-roi-frozen-c7.png)
+
+Физический критерий конкурсного задания и model signal необходимо различать: C7 не заявляет прямое измерение сантиметров для каждого файла при отсутствии необходимых spatial metadata.
+
+## 11. Формирование результата
+
+```text
 quality_class = 0 → PASS
 quality_class = 1 → FAIL
-~~~
+```
 
-`quality_class` формируется из зафиксированных specialist decisions и правил агрегации.
+`quality_class` формируется из frozen subtype decisions и aggregation rules.
 
-## quality_prob
+## 12. quality_prob
 
-`quality_prob` — непрерывный QC score frozen C7.
+`quality_prob` — непрерывный QC score.
 
-Он используется как дополнительный численный сигнал, но не является:
+Он не является:
 
-- accuracy модели;
+- accuracy;
 - процентом качества исследования;
 - вероятностью диагноза;
-- вероятностью того, что модель права;
+- вероятностью корректности модели;
 - заявленной клинически откалиброванной вероятностью.
 
-Итоговый класс нельзя восстанавливать правилом:
+Финальный класс нельзя восстанавливать правилом:
 
-~~~text
+```text
 quality_prob >= 0.5
-~~~
+```
 
-поскольку отдельные компоненты используют собственные frozen thresholds и правила принятия решения.
+## 13. violation_type
 
-## violation_type
+`violation_type` формируется согласованно с frozen subtype decisions.
 
-`violation_type` содержит тип или типы выявленных нарушений качества.
+Одно изображение может иметь несколько типов нарушений.
 
-Он формируется согласованно с итоговыми subtype decisions.
+## 14. processing_status
 
-## processing_status
+Технический статус обработки отделён от QC result.
 
-Технический статус обработки отделён от бинарного QC результата.
+```text
+Success
+Failure
+```
 
-Если автоматическая оценка невозможна, это не должно интерпретироваться как PASS.
+Processing failure не должен интерпретироваться как PASS.
 
-## Frozen policy
+## 15. Frozen policy
 
-До просмотра official VALIDATION labels были зафиксированы:
+До one-time blind validation были зафиксированы:
 
 - model selection;
 - model artifacts;
@@ -156,61 +218,133 @@ quality_prob >= 0.5
 - output semantics;
 - inference runner.
 
-После one-time validation C7 не перенастраивался по её результатам.
+После validation C7 не перенастраивался по её результатам.
 
-## Authoritative runtime
+## 16. One-time validation
 
-~~~text
+Validation set:
+
+```text
+49 изображений
+20 исследований
+```
+
+Overall QC:
+
+| Метрика | Значение |
+|---|---:|
+| Sensitivity | 0.5000 |
+| Specificity | 0.8571 |
+| Balanced accuracy | 0.6786 |
+| F1 | 0.5385 |
+| ROC-AUC | 0.7143 |
+| PR-AUC | 0.6567 |
+
+Confusion matrix:
+
+```text
+TP = 7
+FP = 5
+TN = 30
+FN = 7
+```
+
+Study-cluster bootstrap 95% CI:
+
+| Метрика | 95% CI |
+|---|---|
+| Sensitivity | 0.2500–0.8750 |
+| Specificity | 0.7419–0.9556 |
+| F1 | 0.3000–0.7586 |
+| Balanced accuracy | 0.5377–0.8683 |
+| ROC-AUC | 0.4907–0.9460 |
+| PR-AUC | 0.3859–0.8666 |
+
+95% CI не означает 95% accuracy.
+
+## 17. Subtype validation
+
+Из-за малого числа positive cases subtype-метрики необходимо читать вместе с `n` и количеством positives.
+
+| Subtype | n | positives | F1 | ROC-AUC |
+|---|---:|---:|---:|---:|
+| Spine positioning | 19 | 1 | 0.0000 | 0.8889 |
+| Spine axis | 19 | 2 | 0.5000 | 0.8824 |
+| Spine artifact | 19 | 3 | 0.4000 | 0.7292 |
+| Hip positioning / rotation | 30 | 7 | 0.6154 | 0.8137 |
+| Hip ROI / FOV | 30 | 2 | 0.3333 | 0.9286 |
+
+Subtype macro-F1:
+
+```text
+0.3697
+```
+
+Эти значения имеют высокую статистическую неопределённость из-за малого числа positives.
+
+## 18. C8 challengers
+
+После C7 исследовались независимые challenger approaches:
+
+- Noisy-OR;
+- logistic stacker;
+- score-only alternative;
+- direct overall head;
+- patch-token RAD-DINO.
+
+Ни один вариант не прошёл promotion gate.
+
+```text
+NO_C8_PROMOTION_KEEP_C7
+```
+
+C8 не использовался для ретроспективного исправления C7.
+
+## 19. Authoritative runtime
+
+```text
 ghcr.io/xaltezzarx/boneqc-c7@
 sha256:d67b6a3c695a0cd495e5fd7c31e4d5f2142d13452afec4e304e2f01c9fc045d7
-~~~
+```
 
-Runtime может выполнять inference без сетевого доступа при наличии frozen artifacts.
+Runtime выполняет inference offline при наличии frozen artifacts.
 
-## RTX / GTX parity
+## 20. GPU parity
 
-Compatibility runtime для GTX использует ту же C7-модель.
+Frozen 49-case RTX/GTX replay:
 
-При проверке frozen 49-case replay:
+```text
+semantic mismatches = 0
+class flips         = 0
+```
 
-- semantic mismatches отсутствовали;
-- class flips отсутствовали;
-- небольшие численные различия `quality_prob` не меняли итоговый класс.
+Небольшие различия `quality_prob` не меняли финальный класс.
 
-Compatibility runtime не является новой обученной моделью.
+Compatibility runtime не является новой моделью.
 
-## Валидация
+## 21. H200 compatibility
 
-One-time official validation описана отдельно:
+Authoritative Linux amd64 runtime использует PyTorch 2.14.0 + CUDA 13.0 stack с поддержкой `sm_90`.
 
-[VALIDATION.md](VALIDATION.md)
+NVIDIA H200 относится к Hopper / `sm_90`, поэтому runtime архитектурно совместим с H200.
 
-## Данные и разбиение
+Физический benchmark на H200 командой не выполнялся.
 
-Описание TRAIN / VALIDATION и leakage guardrails:
-
-[DATASET_AND_SPLITS.md](DATASET_AND_SPLITS.md)
-
-## История выбора компонентов
-
-Development model selection и последующие C8 challenger-эксперименты описываются отдельно:
-
-`EXPERIMENT_HISTORY.md`
-
-## Ограничения
+## 22. Ограничения
 
 C7 имеет ограничения:
 
-- малое число positive cases для ряда нарушений;
+- малое число positive cases для ряда subtype;
 - class imbalance;
-- ограничение поддерживаемыми анатомическими областями;
-- отсутствие внешней многоцентровой clinical validation;
-- необходимость отдельной проверки на данных других устройств и учреждений.
+- поддержка только заявленных anatomical regions;
+- отсутствие внешней многоцентровой validation;
+- отсутствие оценки inter-reader agreement;
+- часть physical criteria опирается на surrogate signals при неполных metadata;
+- prototype validation не эквивалентна медицинской сертификации.
 
-Prototype validation не эквивалентна медицинской сертификации.
+## 23. Связанные документы
 
-## Clinical boundary
-
-C7 выполняет технический QC DXA-исследования.
-
-C7 не ставит диагноз.
+- [Validation](VALIDATION.md)
+- [Dataset and Splits](DATASET_AND_SPLITS.md)
+- [Experiment History](EXPERIMENT_HISTORY.md)
+- [Solution Overview](../SOLUTION_OVERVIEW.md)
