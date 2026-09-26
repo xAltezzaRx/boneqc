@@ -36,6 +36,8 @@ XLSX_NAME = "boneqc-c7-results-v1.xlsx"
 MANIFEST_NAME = "boneqc-evaluator-manifest-v1.json"
 AUDIT_NAME = "boneqc-evaluator-audit-v1.json"
 
+C7_REPORT_NAME = "c7-15c-inference-report-v1.json"
+
 REQUIRED_COLUMNS = {
     "path_to_study",
     "study_uid",
@@ -311,6 +313,33 @@ for path in sorted(
     p for p in root.rglob("*")
     if p.is_file()
 ):
+    suffix_hint = (
+        path.suffix.lower()
+        in {
+            ".dcm",
+            ".dicom",
+        }
+    )
+
+    preamble_hint = False
+
+    try:
+        with path.open("rb") as handle:
+            header = handle.read(132)
+
+        preamble_hint = (
+            len(header) >= 132
+            and header[128:132] == b"DICM"
+        )
+
+    except OSError:
+        pass
+
+    explicit_candidate = (
+        suffix_hint
+        or preamble_hint
+    )
+
     try:
         ds = pydicom.dcmread(
             str(path),
@@ -380,8 +409,16 @@ for path in sorted(
                 path.relative_to(root).as_posix()
             )
 
+        elif explicit_candidate:
+            selected.append(
+                path.relative_to(root).as_posix()
+            )
+
     except Exception:
-        continue
+        if explicit_candidate:
+            selected.append(
+                path.relative_to(root).as_posix()
+            )
 
 print(
     json.dumps(
@@ -543,7 +580,7 @@ def write_manifest(
 def run_c7(
     staging: Path,
     output: Path,
-) -> float:
+) -> tuple[float, int]:
     started = time.perf_counter()
 
     result = run(
@@ -572,13 +609,81 @@ def run_c7(
         - started
     )
 
-    if result.returncode != 0:
+    return (
+        elapsed,
+        result.returncode,
+    )
+
+
+def validate_c7_exit_semantics(
+    output: Path,
+    returncode: int,
+) -> str:
+    if returncode == 0:
+        return "success"
+
+    if returncode != 2:
         raise EvaluatorError(
             "Frozen C7 inference failed "
-            f"with exit code {result.returncode}"
+            f"with exit code {returncode}"
         )
 
-    return elapsed
+    csv_path = output / CSV_NAME
+    xlsx_path = output / XLSX_NAME
+    report_path = output / C7_REPORT_NAME
+
+    missing = [
+        path.name
+        for path in (
+            csv_path,
+            xlsx_path,
+            report_path,
+        )
+        if not path.is_file()
+    ]
+
+    if missing:
+        raise EvaluatorError(
+            "Frozen C7 REVIEW exit did not produce "
+            "required artifacts: "
+            + ", ".join(missing)
+        )
+
+    try:
+        report = json.loads(
+            report_path.read_text(
+                encoding="utf-8"
+            )
+        )
+
+    except Exception as exc:
+        raise EvaluatorError(
+            "Unable to read frozen C7 review report"
+        ) from exc
+
+    try:
+        failure_rows = int(
+            report.get(
+                "failure_rows",
+                0,
+            )
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ) as exc:
+        raise EvaluatorError(
+            "Invalid failure_rows in frozen C7 report"
+        ) from exc
+
+    if failure_rows <= 0:
+        raise EvaluatorError(
+            "Frozen C7 returned REVIEW without "
+            "recorded per-file Failure rows"
+        )
+
+    return "mixed-batch-review"
 
 
 def restore_source_paths(
@@ -772,6 +877,43 @@ def audit_outputs(
             "Empty processing_status detected"
         )
 
+    allowed_statuses = {
+        "Success",
+        "Failure",
+    }
+
+    invalid_statuses = sorted(
+        {
+            row.get(
+                "processing_status",
+                "",
+            ).strip()
+            for row in rows
+        }
+        - allowed_statuses
+    )
+
+    if invalid_statuses:
+        raise EvaluatorError(
+            "Unexpected processing_status values: "
+            + ", ".join(invalid_statuses)
+        )
+
+    status_counts = {
+        status: sum(
+            1
+            for row in rows
+            if row.get(
+                "processing_status",
+                "",
+            ).strip()
+            == status
+        )
+        for status in sorted(
+            allowed_statuses
+        )
+    }
+
     audit = {
         "schema_version":
             "boneqc-evaluator-audit-v1",
@@ -784,6 +926,8 @@ def audit_outputs(
         "path_completeness": True,
         "required_columns_present": True,
         "processing_status_complete": True,
+        "processing_status_counts":
+            status_counts,
         "csv": CSV_NAME,
         "xlsx": XLSX_NAME,
         "wall_seconds": round(
@@ -879,6 +1023,30 @@ def main() -> int:
             dicoms = discover_dicoms(
                 root
             )
+
+            # A directly supplied file is an explicit
+            # evaluator input. Even if its DICOM
+            # metadata is damaged beyond discovery,
+            # stage it so frozen C7 can emit its
+            # existing per-file Failure row.
+            if (
+                source_type == "single-file"
+                and not dicoms
+            ):
+                single_files = sorted(
+                    path
+                    for path in root.iterdir()
+                    if path.is_file()
+                )
+
+                if len(single_files) == 1:
+                    dicoms = [
+                        single_files[
+                            0
+                        ].relative_to(
+                            root
+                        ).as_posix()
+                    ]
 
             print(
                 "[BoneQC] DICOM_COUNT="
@@ -979,9 +1147,29 @@ def main() -> int:
                 "[BoneQC] NETWORK_DURING_INFERENCE=NONE"
             )
 
-            elapsed = run_c7(
+            (
+                elapsed,
+                c7_returncode,
+            ) = run_c7(
                 staging,
                 output,
+            )
+
+            c7_exit_semantics = (
+                validate_c7_exit_semantics(
+                    output,
+                    c7_returncode,
+                )
+            )
+
+            print(
+                "[BoneQC] C7_RETURN_CODE="
+                + str(c7_returncode)
+            )
+
+            print(
+                "[BoneQC] C7_EXIT_SEMANTICS="
+                + c7_exit_semantics
             )
 
             restore_source_paths(

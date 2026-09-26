@@ -133,6 +133,28 @@ make(
     "this is not dicom",
     encoding="utf-8",
 )
+
+# Explicit DICOM extension, intentionally
+# unreadable as a real DICOM dataset.
+(
+    root
+    / "broken.dcm"
+).write_bytes(
+    b"not-a-valid-dicom"
+)
+
+# Extension-independent corrupted DICOM
+# candidate identified by the standard
+# 128-byte preamble + DICM marker.
+(
+    root
+    / "nested"
+    / "broken_preamble"
+).write_bytes(
+    b"\0" * 128
+    + b"DICM"
+    + b"broken"
+)
 '''
 
 
@@ -186,12 +208,12 @@ class InputDiscoveryTests(
             msg=result.stderr,
         )
 
-    def assert_three_dicoms(
+    def assert_five_candidates(
         self,
         output: str,
     ) -> None:
         self.assertIn(
-            "[BoneQC] DICOM_COUNT=3",
+            "[BoneQC] DICOM_COUNT=5",
             output,
         )
 
@@ -207,6 +229,16 @@ class InputDiscoveryTests(
 
         self.assertIn(
             "DICOM=nested/no_extension",
+            output,
+        )
+
+        self.assertIn(
+            "DICOM=broken.dcm",
+            output,
+        )
+
+        self.assertIn(
+            "DICOM=nested/broken_preamble",
             output,
         )
 
@@ -240,7 +272,7 @@ class InputDiscoveryTests(
                 msg=result.stderr,
             )
 
-            self.assert_three_dicoms(
+            self.assert_five_candidates(
                 result.stdout
             )
 
@@ -284,8 +316,46 @@ class InputDiscoveryTests(
                 msg=result.stderr,
             )
 
-            self.assert_three_dicoms(
+            self.assert_five_candidates(
                 result.stdout
+            )
+
+    def test_explicit_single_corrupt_file_is_candidate(
+        self,
+    ):
+        with tempfile.TemporaryDirectory() as td:
+            path = (
+                Path(td)
+                / "broken_payload.bin"
+            )
+
+            path.write_bytes(
+                b"definitely-not-dicom"
+            )
+
+            result = run_wrapper(
+                path
+            )
+
+            self.assertEqual(
+                result.returncode,
+                0,
+                msg=result.stderr,
+            )
+
+            self.assertIn(
+                "[BoneQC] DICOM_COUNT=1",
+                result.stdout,
+            )
+
+            self.assertIn(
+                "DICOM=broken_payload.bin",
+                result.stdout,
+            )
+
+            self.assertIn(
+                "R8.6_DICOM_DISCOVERY=PASS",
+                result.stdout,
             )
 
     def test_zip_traversal_rejected(
