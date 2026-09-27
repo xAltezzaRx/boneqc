@@ -8,6 +8,12 @@ BoneQC определяет поддерживаемую анатомическ�
 
 > BoneQC выполняет технический QC. Система не диагностирует остеопороз и не заменяет медицинское заключение.
 
+## Основные ссылки
+
+- 🌐 **Веб-прототип:** https://boneqc.ru
+- 📦 **Репозиторий:** https://github.com/xAltezzaRx/boneqc
+- 📋 **Frozen C7 Release:** https://github.com/xAltezzaRx/boneqc/releases/tag/c7-final-v1
+
 ## Обзор решения
 
 Подробное описание продукта, ML-архитектуры, конкурсного runtime, validation и ограничений:
